@@ -17,6 +17,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion"; // Added motion import
 
 // Import Icons
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -24,6 +25,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import FolderOffIcon from "@mui/icons-material/FolderOff";
 import ArticleIcon from "@mui/icons-material/Article";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"; // Icon for success message
 
 // Import custom components
 import StatusChip from "../components/StatusChip";
@@ -175,6 +177,7 @@ function HistoryPage() {
   const [error, setError] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [isSuccessAlertOpen, setIsSuccessAlertOpen] = useState(false); // NEW STATE
 
   const fetchReports = async () => {
     setIsLoading(true);
@@ -203,6 +206,16 @@ function HistoryPage() {
     setReportToDelete(null);
   };
 
+  // New Effect to dismiss success alert after 3 seconds
+  useEffect(() => {
+    if (isSuccessAlertOpen) {
+      const timer = setTimeout(() => {
+        setIsSuccessAlertOpen(false);
+      }, 3000); // Alert vanishes after 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccessAlertOpen]);
+
   // FIX APPLIED HERE: Added authorization header to the axios delete call
   const confirmDelete = async () => {
     if (reportToDelete) {
@@ -223,6 +236,7 @@ function HistoryPage() {
           }
         );
         fetchReports(); // Refresh the list after deleting
+        setIsSuccessAlertOpen(true); // SET SUCCESS ALERT
       } catch (err) {
         console.error("Failed to delete report:", err);
         setError("Could not delete the report. Please try again.");
@@ -253,10 +267,43 @@ function HistoryPage() {
       sx={{
         p: { xs: 4, sm: 6, lg: 10 },
         minHeight: "calc(100vh - 72px - 210px)",
-        // FIX APPLIED: Removed bgcolor to allow AnimatedBackground to show through
-        // bgcolor: theme.palette.background.default,
+        // Background handled by Layout.jsx
       }}
     >
+      {/* SUCCESS MESSAGE TOAST */}
+      <AnimatePresence>
+        {isSuccessAlertOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              position: "fixed",
+              top: "100px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "90%",
+              maxWidth: "400px",
+              zIndex: 2000,
+            }}
+          >
+            <Alert
+              severity="success"
+              icon={<CheckCircleOutlineIcon fontSize="inherit" />}
+              sx={{
+                borderRadius: 3,
+                bgcolor: theme.palette.success.dark,
+                color: theme.palette.success.contrastText,
+              }}
+            >
+              Report **deleted** successfully.
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* END SUCCESS MESSAGE */}
+
       <Box
         sx={{
           display: "flex",
